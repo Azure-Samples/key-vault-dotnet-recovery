@@ -1,14 +1,27 @@
-# Project Name
+---
+services: key-vault
+platforms: dotnet
+author: dragosav
+---
 
-(short, 1-3 sentenced, description of the project)
+# .Net SDK samples for recovering and restoring Azure Key Vault entities 
 
-## Features
+This repo contains sample code demonstrating the backup/restore and recoverable deletion functionality of Azure Key Vault using the [Azure .Net SDK](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/key-vault?view=azure-dotnet). The scenarios covered by these samples include:
 
-This project framework provides the following features:
+* Backing up and restoring Key Vault secrets and keys
+* Enabling recoverable deletion on creating a new vault
+* Enabling recoverable deletion on an existing vault
+* Recovering or permanently deleting deleted vaults
+* Recovering or permanently deleting Key Vault secrets, keys, and certificates
 
-* Feature 1
-* Feature 2
-* ...
+The recoverable deletion functionality is also referred to as "soft delete"; consequently, a permanent, irrecoverable deletion is referred to as 'purge'.
+
+## Samples in this repo:
+
+* Back up and restore Key Vault entities
+* Enable soft delete
+* Delete, recover and purge a vault
+* Delete, recover and purge vault entities
 
 ## Getting Started
 
