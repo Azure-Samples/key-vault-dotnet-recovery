@@ -12,25 +12,37 @@ using Microsoft.Rest;
 
 namespace AzureKeyVaultRecoverySamples
 {
+    /// <summary>
+    /// Base class for KeyVault recovery samples.
+    /// </summary>
     public class KeyVaultSampleBase
     {
+        /// <summary>
+        /// Represents the client context - Azure tenant, subscription, identity etc.
+        /// </summary>
         protected ClientContext context;
 
-
+        /// <summary>
+        /// KeyVault management (Control Plane) client instance.
+        /// </summary>
         public KeyVaultManagementClient ManagementClient { get; private set; }
 
+        /// <summary>
+        /// KeyVault data (Data Plane) client instance.
+        /// </summary>
         public KeyVaultClient DataClient { get; private set; }
 
         /// <summary>
         /// Builds a sample object from the specified parameters.
         /// </summary>
-        /// <param name="tenantId"></param>
-        /// <param name="objectId"></param>
-        /// <param name="appId"></param>
-        /// <param name="appCredX5T"></param>
-        /// <param name="subscriptionId"></param>
-        /// <param name="resourceGroupName"></param>
-        /// <param name="vaultLocation"></param>
+        /// <param name="tenantId">Tenant id.</param>
+        /// <param name="objectId">AAD object id.</param>
+        /// <param name="appId">AAD application id.</param>
+        /// <param name="appCredX5T">Thumbprint of certificate representing the AD application credential.</param>
+        /// <param name="subscriptionId">Subscription id.</param>
+        /// <param name="resourceGroupName">Resource group name.</param>
+        /// <param name="vaultLocation">Vault location.</param>
+        /// <param name="vaultName">Vault name.</param>
         public KeyVaultSampleBase(string tenantId, string objectId, string appId, string appCredX5T, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
         {
             InstantiateSample(tenantId, objectId, appId, appCredX5T, subscriptionId, resourceGroupName, vaultLocation, vaultName);
@@ -254,6 +266,13 @@ namespace AzureKeyVaultRecoverySamples
             return response;
         }
 
+        /// <summary>
+        /// Retries the specified function according to the specified retry policy.
+        /// </summary>
+        /// <param name="function"></param>
+        /// <param name="functionName"></param>
+        /// <param name="policy"></param>
+        /// <returns></returns>
         public static Task<HttpOperationResponse> RetryHttpRequestAsync(
             Func<Task<HttpOperationResponse>> function,
             string functionName,

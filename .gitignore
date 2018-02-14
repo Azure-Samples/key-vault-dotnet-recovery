@@ -8,6 +8,8 @@
 *.user
 *.userosscache
 *.sln.docstates
+app.config.mine
+AzureKeyVaultRecoverySamples.sln
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

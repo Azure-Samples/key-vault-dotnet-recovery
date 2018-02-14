@@ -5,6 +5,9 @@ namespace AzureKeyVaultRecoverySamples
 {
     public static class SampleConstants
     {
+        /// <summary>
+        /// Constants representing the configuration setting keys.
+        /// </summary>
         public static class ConfigKeys
         {
             public static readonly string TenantId = "TenantId";
@@ -17,6 +20,9 @@ namespace AzureKeyVaultRecoverySamples
             public static readonly string ApplicationId = "ApplicationId";
         }
 
+        /// <summary>
+        /// Predetermined policies for retrying KeyVault-bound requests.
+        /// </summary>
         public static class RetryPolicies
         {
             /// <summary>

@@ -27,44 +27,44 @@ The recoverable deletion functionality is also referred to as "soft delete"; con
 
 ### Prerequisites
 
-(ideally very short, if any)
-
-- OS
-- Library version
-- ...
+- OS: Windows
+- SDKs: 
+    **  Microsoft.Azure.Management.KeyVault.Fluent ver. 1.6.0+
+    **  KeyVault data SDK: Microsoft.Azure.KeyVault ver. 2.3.2+
+- Azure:
+    ** a subscription, in which you have the KeyVaultContributor role
+    ** an Azure Active Directory application, created in the tenant associated with the subscription, and with access to KeyVault
+       please see https://blogs.technet.microsoft.com/kv/2016/09/17/accessing-key-vault-from-a-native-application/ for details.
+    ** an X509 certificate, set as the credentials of the AAD application
+       please see https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
+    ** install the X509 certificate above on the machine where the sample will be executed
+    
 
 ### Installation
 
-(ideally very short)
-
-- npm install [package name]
-- mvn install
-- ...
+- open the solution in Visual Studio - NuGet should resolve the necessary packages
 
 ### Quickstart
-(Add steps to get up and running quickly)
+Follow these steps to get started with this sample:
 
-1. git clone [repository clone url]
-2. cd [respository name]
-3. ...
+1. git clone https://github.com/Azure-Samples/key-vault-dotnet-recovery.git
+2. cd azure-samples\key-vault-dotnet-recovery
+3. start AzureKeyVaultRecoverySamples.csproj
+4. edit the app.config file, specifying the tenant, subscription, AD app id, object id and certificate thumbprint
+5. build and run the project
 
 
 ## Demo
 
-A demo app is included to show how to use the project.
-
-To run the demo, follow these steps:
-
-(Add steps to start up the demo)
-
-1.
-2.
-3.
 
 ## Resources
 
-(Any additional resources or related projects)
+Please see the following links for additional information:
 
-- Link to supporting information
-- Link to similar sample
-- ...
+- https://docs.microsoft.com/en-us/azure/key-vault/key-vault-ovw-soft-delete
+- https://docs.microsoft.com/en-us/azure/key-vault/key-vault-soft-delete-powershell
+- https://docs.microsoft.com/en-us/azure/key-vault/key-vault-soft-delete-cli
+
+The following samples are related:
+
+- https://azure.microsoft.com/en-us/resources/samples/key-vault-recovery-python/
