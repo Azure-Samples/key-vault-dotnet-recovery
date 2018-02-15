@@ -53,7 +53,6 @@ namespace AzureKeyVaultRecoverySamples
         public string ResourceGroupName { get; set; }
         #endregion
 
-
         #region authentication helpers
         /// <summary>
         /// Returns a task representing the attempt to log in to Azure public as the specified
@@ -138,7 +137,6 @@ namespace AzureKeyVaultRecoverySamples
         {
             return () => { return AcquireTokenAsync(authority, resource, scope); };
         }
-
         #endregion
     }
 }

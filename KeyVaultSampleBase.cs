@@ -112,10 +112,7 @@ namespace AzureKeyVaultRecoverySamples
                 ObjectId = context.ObjectId,
                 Permissions = new Permissions
                 {
-                    Keys = new string[] { "get", "create", "import", "list", "delete", "recover" },
-                    Secrets = new string[] { "get", "set", "list", "delete", "recover" },
-                    Certificates = new string[] { "get", "list", "delete", "recover" },
-                    Storage = new string[] { "get", "set", "list", "delete", "recover" }
+                    Secrets = new string[] { "get", "set", "list", "delete", "recover", "backup", "restore", "purge" },
                 }
             });
 
