@@ -13,7 +13,7 @@ namespace AzureKeyVaultRecoverySamples
     /// </summary>
     public sealed class ClientContext
     {
-        private static ClientCredential _servicePrincipalCredential = null;
+        private static ClientAssertionCertificate _servicePrincipalCredential = null;
 
         #region construction
         public static ClientContext Build(string tenantId, string objectId, string appId, string subscriptionId, string resourceGroupName, string location, string vaultName)
@@ -56,15 +56,15 @@ namespace AzureKeyVaultRecoverySamples
         #region authentication helpers
         /// <summary>
         /// Returns a task representing the attempt to log in to Azure public as the specified
-        /// service principal, with the specified credential.
+        /// service principal, with the specified certificate credential.
         /// </summary>
         /// <param name="certificateThumbprint"></param>
         /// <returns></returns>
-        public static Task<ServiceClientCredentials> GetServiceCredentialsAsync( string tenantId, string applicationId, string appSecret )
+        public static Task<ServiceClientCredentials> GetServiceCredentialsAsync( string tenantId, string applicationId, string certificateThumbprint )
         {
             if (_servicePrincipalCredential == null)
             {
-                _servicePrincipalCredential = new ClientCredential(applicationId, appSecret);
+                _servicePrincipalCredential = new ClientAssertionCertificate(applicationId, GetCertificateByThumbprint(certificateThumbprint));
             }
 
             return ApplicationTokenProvider.LoginSilentAsync(
@@ -81,17 +81,50 @@ namespace AzureKeyVaultRecoverySamples
         {
             if (_servicePrincipalCredential == null)
             {
-                // read directly from config
+                // ugh;read directly from config
                 var appId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ApplicationId];
-                var spSecret = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPSecret];
+                var spCredsX5T = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPCredentialCertificateThumbprint];
 
-                _servicePrincipalCredential = new ClientCredential(appId, spSecret);
+                _servicePrincipalCredential = new ClientAssertionCertificate(appId, GetCertificateByThumbprint(spCredsX5T));
             }
 
             AuthenticationContext ctx = new AuthenticationContext(authority, false, TokenCache.DefaultShared);
             AuthenticationResult result = await ctx.AcquireTokenAsync(resource, _servicePrincipalCredential).ConfigureAwait(false);
 
             return result.AccessToken;
+        }
+
+
+        /// <summary>
+        /// Retrieves and returns a certificate from the current user store
+        /// </summary>
+        /// <param name="thumbprint"></param>
+        /// <returns></returns>
+        private static X509Certificate2 GetCertificateByThumbprint(string thumbprint)
+        {
+            X509Certificate2 certificate = null;
+
+            X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+
+                X509Certificate2Collection found = store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false);
+                if (found.Count > 0)
+                    certificate = found[0];
+            }
+            catch (Exception)
+            {
+                Console.WriteLine(String.Format("Failed to retrieve certificate with thumbprint '{0}' from the current user store", thumbprint));
+
+                throw;
+            }
+            finally
+            {
+                store.Close();
+            }
+
+            return certificate;
         }
 
         /// <summary>
