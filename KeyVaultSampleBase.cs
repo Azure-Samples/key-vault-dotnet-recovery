@@ -56,22 +56,22 @@ namespace AzureKeyVaultRecoverySamples
             // retrieve parameters from configuration
             var tenantId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.TenantId];
             var spObjectId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPObjectId];
-            var spCredsX5T = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPCredentialCertificateThumbprint];
+            var spSecret = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPSecret];
             var appId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ApplicationId];
             var subscriptionId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SubscriptionId];
             var resourceGroupName = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ResourceGroupName];
             var vaultLocation = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.VaultLocation];
             var vaultName = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.VaultName];
 
-            InstantiateSample(tenantId, spObjectId, appId, spCredsX5T, subscriptionId, resourceGroupName, vaultLocation, vaultName);
+            InstantiateSample(tenantId, spObjectId, appId, spSecret, subscriptionId, resourceGroupName, vaultLocation, vaultName);
         }
 
-        private void InstantiateSample(string tenantId, string objectId, string appId, string appCredX5T, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
+        private void InstantiateSample(string tenantId, string objectId, string appId, string appSecret, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
         {
             context = ClientContext.Build(tenantId, objectId, appId, subscriptionId, resourceGroupName, vaultLocation, vaultName);
 
             // log in with as the specified service principal
-            var serviceCredentials = Task.Run(() => ClientContext.GetServiceCredentialsAsync(tenantId, appId, appCredX5T)).ConfigureAwait(false).GetAwaiter().GetResult();
+            var serviceCredentials = Task.Run(() => ClientContext.GetServiceCredentialsAsync(tenantId, appId, appSecret)).ConfigureAwait(false).GetAwaiter().GetResult();
 
             // instantiate the management client
             ManagementClient = new KeyVaultManagementClient(serviceCredentials);
