@@ -1,7 +1,7 @@
 ---
 services: key-vault
 platforms: dotnet
-author: dragav
+author: dragosav
 ---
 
 # .Net SDK samples for recovering and restoring Azure Key Vault entities 
