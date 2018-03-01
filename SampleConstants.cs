@@ -16,7 +16,7 @@ namespace AzureKeyVaultRecoverySamples
             public static readonly string ResourceGroupName = "ResourceGroupName";
             public static readonly string SubscriptionId = "SubscriptionId";
             public static readonly string SPObjectId = "SPObjectId";
-            public static readonly string SPCredentialCertificateThumbprint = "SPCredentialCertificateThumbprint";
+            public static readonly string SPSecret = "SPSecret";
             public static readonly string ApplicationId = "ApplicationId";
         }
 
@@ -50,9 +50,9 @@ namespace AzureKeyVaultRecoverySamples
             public static RetryPolicy DefaultSoftDeleteRetryPolicy = new RetryPolicy(
                 SoftDeleteInitialBackoff,
                 SoftDeleteMaxAttempts,
-                SuccessStatusCodes,
-                SoftDeleteRetriableStatusCodes,
-                AbortStatusCodes);
+                continueOn: SuccessStatusCodes,
+                retryOn: SoftDeleteRetriableStatusCodes,
+                abortOn: AbortStatusCodes);
 
             /// <summary>
             /// Standard retry policy for soft-delete-related operations which attempt to consume the outcome of an async operation.
