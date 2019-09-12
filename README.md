@@ -1,7 +1,11 @@
 ---
-services: key-vault
-platforms: dotnet
-author: dragav
+page_type: sample
+languages:
+- csharp
+products:
+- azure
+description: "This repo contains sample code demonstrating the backup/restore and recoverable deletion functionality of Azure Key Vault using the Azure .Net SDK."
+urlFragment: key-vault-dotnet-recovery
 ---
 
 # .Net SDK samples for recovering and restoring Azure Key Vault entities 
