@@ -62,10 +62,10 @@ Follow these steps to get started with this sample:
 
 Please see the following links for additional information:
 
-- [Azure Key Vault soft-delete overview](https://docs.microsoft.com/en-us/azure/key-vault/key-vault-ovw-soft-delete)
-- [How to use Key Vault soft-delete with PowerShell](https://docs.microsoft.com/en-us/azure/key-vault/key-vault-soft-delete-powershell)
-- [How to use Key Vault soft-delete with CLI](https://docs.microsoft.com/en-us/azure/key-vault/key-vault-soft-delete-cli)
+- [Azure Key Vault soft-delete overview](https://docs.microsoft.com/azure/key-vault/key-vault-ovw-soft-delete)
+- [How to use Key Vault soft-delete with PowerShell](https://docs.microsoft.com/azure/key-vault/key-vault-soft-delete-powershell)
+- [How to use Key Vault soft-delete with CLI](https://docs.microsoft.com/azure/key-vault/key-vault-soft-delete-cli)
 
 The following samples are also related:
 
-- [Recovery scenario samples for Azure Key Vault using the Azure Python SDK](https://azure.microsoft.com/en-us/resources/samples/key-vault-recovery-python/)
+- [Recovery scenario samples for Azure Key Vault using the Azure Python SDK](https://azure.microsoft.com/resources/samples/key-vault-recovery-python/)
