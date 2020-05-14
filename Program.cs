@@ -20,11 +20,12 @@ namespace AzureKeyVaultRecoverySamples
 
             // soft delete flow for a vault entity
             Console.WriteLine("\n\n** Running recovery/purge sample for a vault entity..");
-            Task.Run(() => KeyVaultEntityRecoverySamples.DemonstrateRecoveryAndPurgeAsync()).ConfigureAwait(false).GetAwaiter().GetResult();
+            var sample = new KeyVaultEntityRecoverySamples();
+            Task.Run(() => sample.DemonstrateRecoveryAndPurgeAsync()).ConfigureAwait(false).GetAwaiter().GetResult();
 
             // backup/restore flow for a vault entity
             Console.WriteLine("\n\n** Running backup/restore sample for a vault entity..");
-            Task.Run(() => KeyVaultEntityRecoverySamples.DemonstrateBackupAndRestoreAsync()).ConfigureAwait(false).GetAwaiter().GetResult();
+            Task.Run(() => sample.DemonstrateBackupAndRestoreAsync()).ConfigureAwait(false).GetAwaiter().GetResult();
         }
     }
 }

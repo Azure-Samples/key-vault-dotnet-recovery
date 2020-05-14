@@ -1,12 +1,13 @@
-﻿using System;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.KeyVault.Models;
+﻿using Azure;
+using Azure.Security.KeyVault.Secrets;
 using Microsoft.Azure.Management.KeyVault.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent.Models;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Rest.Azure;
+using System;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AzureKeyVaultRecoverySamples
 {
@@ -23,8 +24,8 @@ namespace AzureKeyVaultRecoverySamples
         /// <param name="resourceGroupName">Resource group name.</param>
         /// <param name="vaultLocation">Location of the vault.</param>
         /// <param name="vaultName">Vault name.</param>
-        public KeyVaultEntityRecoverySamples(string tenantId, string objectId, string appId, string appCredX5T, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
-            : base(tenantId, objectId, appId, appCredX5T, subscriptionId, resourceGroupName, vaultLocation, vaultName)
+        public KeyVaultEntityRecoverySamples(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
+            : base(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName)
         { }
 
         /// <summary>
@@ -40,103 +41,85 @@ namespace AzureKeyVaultRecoverySamples
         /// Assumes the caller has the KeyVaultContributor role in the subscription.
         /// </summary>
         /// <returns>Task representing this functionality.</returns>
-        public static async Task DemonstrateRecoveryAndPurgeAsync()
+        public async Task DemonstrateRecoveryAndPurgeAsync()
         {
-            // instantiate the samples object
-            var sample = new KeyVaultEntityRecoverySamples();
-
-            var rgName = sample.context.ResourceGroupName;
-
             // derive a unique vault name for this sample
-            var vaultName = sample.context.VaultName + "invault";
+            var vaultName = context.VaultName + "invault";
+
+            var rgName = context.ResourceGroupName;
             var secretName = "recoverysample";
 
             // retrieve the vault (or create, if it doesn't exist)
-            var vault = await sample.CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: true, enablePurgeProtection: false);
+            var vault = await CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: true, enablePurgeProtection: false);
             var vaultUri = vault.Properties.VaultUri;
+
+            // create a secret client to interact with key vault secret
+            SecretClient = new SecretClient(new Uri(vaultUri), ClientSecretCredential);
+
             Console.WriteLine("Operating with vault name '{0}' in resource group '{1}' and location '{2}'", vaultName, rgName, vault.Location);
 
             try
             {
                 // set a secret
                 Console.Write("Setting a new value for secret '{0}'...", secretName);
-                var secretResponse = await sample.DataClient.SetSecretWithHttpMessagesAsync(vaultUri, secretName, Guid.NewGuid().ToString()).ConfigureAwait(false);
+                await SecretClient.SetSecretAsync(secretName, Guid.NewGuid().ToString());
                 Console.WriteLine("done.");
 
                 // confirm existence
                 Console.Write("Verifying secret creation...");
-                var retrievedSecretResponse = await sample.DataClient.GetSecretWithHttpMessagesAsync(vaultUri, secretName, secretVersion: String.Empty).ConfigureAwait(false);
+                Response<KeyVaultSecret> retrievedSecretResponse = await SecretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // confirm recovery is possible
                 Console.Write("Verifying the secret deletion is recoverable...");
-                var recoveryLevel = retrievedSecretResponse.Body.Attributes.RecoveryLevel;
+                var recoveryLevel = retrievedSecretResponse.Value.Properties.RecoveryLevel;
                 if (!recoveryLevel.ToLowerInvariant().Contains("Recoverable".ToLowerInvariant()))
                 {
                     Console.WriteLine("failed; soft-delete is not enabled for this vault.");
 
                     return;
                 }
+
                 Console.WriteLine("done.");
 
                 // delete secret
                 Console.Write("Deleting secret...");
-                await sample.DataClient.DeleteSecretWithHttpMessagesAsync(vaultUri, secretName).ConfigureAwait(false);
-                Console.WriteLine("done.");
+                DeleteSecretOperation deleteSecretOperation = await SecretClient.StartDeleteSecretAsync(secretName);
 
-                // retrieve deleted secret; recoverable deletion is an asynchronous operation, during which the secret
-                // is not accessible, either as an active entity or a deleted one. Polling for up to 45s should be sufficient.
-                Console.Write("Retrieving the deleted secret...");
-                AzureOperationResponse<DeletedSecretBundle> deletedSecretResponse = null;
-                await RetryHttpRequestAsync(
-                    async () => { return deletedSecretResponse = await sample.DataClient.GetDeletedSecretWithHttpMessagesAsync(vaultUri, secretName).ConfigureAwait(false); }, 
-                    "get deleted secret", 
-                    SampleConstants.RetryPolicies.DefaultSoftDeleteRetryPolicy)
-                    .ConfigureAwait(false);
+                // When deleting a secret asynchronously before you purge it, you can await the WaitForCompletionAsync method on the operation
+                await deleteSecretOperation.WaitForCompletionAsync();
                 Console.WriteLine("done.");
 
                 // recover secret
                 Console.Write("Recovering deleted secret...");
-                var recoveredSecretResponse = await sample.DataClient.RecoverDeletedSecretWithHttpMessagesAsync(vaultUri, secretName).ConfigureAwait(false);
+                RecoverDeletedSecretOperation recoverDeletedSecretOperation = await SecretClient.StartRecoverDeletedSecretAsync(secretName);
+                await recoverDeletedSecretOperation.WaitForCompletionAsync();
                 Console.WriteLine("done.");
 
                 // confirm recovery
                 Console.Write("Retrieving recovered secret...");
-                await RetryHttpRequestAsync(
-                    async () => { return retrievedSecretResponse = await sample.DataClient.GetSecretWithHttpMessagesAsync(vaultUri, secretName, secretVersion: String.Empty).ConfigureAwait(false); },
-                    "recover deleted secret",
-                    SampleConstants.RetryPolicies.DefaultSoftDeleteRetryPolicy)
-                    .ConfigureAwait(false);
+                await SecretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // delete secret
                 Console.Write("Deleting secret (pass #2)...");
-                await sample.DataClient.DeleteSecretWithHttpMessagesAsync(vaultUri, secretName).ConfigureAwait(false);
+                DeleteSecretOperation deleteSecretOperation2 = await SecretClient.StartDeleteSecretAsync(secretName);
+                await deleteSecretOperation2.WaitForCompletionAsync();
                 Console.WriteLine("done.");
 
                 // retrieve deleted secret
-                Console.Write("Retrieving the deleted secret (pass #2)...");
-                await RetryHttpRequestAsync(
-                    async () => { return deletedSecretResponse = await sample.DataClient.GetDeletedSecretWithHttpMessagesAsync(vaultUri, secretName); },
-                    "get deleted secret",
-                    SampleConstants.RetryPolicies.DefaultSoftDeleteRetryPolicy)
-                    .ConfigureAwait(false);
+                Console.Write("Retrieving the deleted secret...");
+                await SecretClient.GetDeletedSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // purge secret
                 Console.Write("Purging deleted secret...");
-                await sample.DataClient.PurgeDeletedSecretWithHttpMessagesAsync(vaultUri, secretName).ConfigureAwait(false);
+                await SecretClient.PurgeDeletedSecretAsync(secretName);
                 Console.WriteLine("done.");
             }
-            catch (KeyVaultErrorException kvee)
+            catch (RequestFailedException ex)
             {
-                Console.WriteLine("Unexpected KeyVault exception encountered: {0}", kvee.Message);
-
-                throw;
-            }
-            catch (CloudException ce)
-            {
-                Console.WriteLine("Unexpected ARM exception encountered: {0}", ce.Message);
+                Console.WriteLine("Unexpected KeyVault exception encountered: {0}", ex.Message);
 
                 throw;
             }
@@ -152,7 +135,7 @@ namespace AzureKeyVaultRecoverySamples
         /// Demonstrates how to back up and restore a secret.
         /// </summary>
         /// <returns>Task representing this functionality.</returns>
-        public static async Task DemonstrateBackupAndRestoreAsync()
+        public async Task DemonstrateBackupAndRestoreAsync()
         {
             // instantiate the samples object
             var sample = new KeyVaultEntityRecoverySamples();
@@ -166,50 +149,50 @@ namespace AzureKeyVaultRecoverySamples
             // retrieve the vault (or create, if it doesn't exist)
             var vault = await sample.CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: false, enablePurgeProtection: false);
             var vaultUri = vault.Properties.VaultUri;
+
+            // create a secret client to interact with key vault secret
+            SecretClient = new SecretClient(new Uri(vaultUri), ClientSecretCredential);
+
             Console.WriteLine("Operating with vault name '{0}' in resource group '{1}' and location '{2}'", vaultName, rgName, vault.Location);
 
             try
             {
                 // set a secret
                 Console.Write("Setting a new value for secret '{0}'...", secretName);
-                var secretResponse = await sample.DataClient.SetSecretWithHttpMessagesAsync(vaultUri, secretName, Guid.NewGuid().ToString()).ConfigureAwait(false);
+                await SecretClient.SetSecretAsync(secretName, Guid.NewGuid().ToString());
                 Console.WriteLine("done.");
 
                 // confirm existence
                 Console.Write("Verifying secret creation...");
-                var retrievedSecretResponse = await sample.DataClient.GetSecretWithHttpMessagesAsync(vaultUri, secretName, secretVersion: String.Empty).ConfigureAwait(false);
+                await SecretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // backup secret
                 Console.Write("Backing up secret...");
-                var backupResponse = await sample.DataClient.BackupSecretWithHttpMessagesAsync(vaultUri, secretName).ConfigureAwait(false);
+                Response<byte[]> backupResponse = await SecretClient.BackupSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // delete secret
                 Console.Write("Deleting secret...");
-                await sample.DataClient.DeleteSecretWithHttpMessagesAsync(vaultUri, secretName).ConfigureAwait(false);
+                DeleteSecretOperation deleteSecretOperation = await SecretClient.StartDeleteSecretAsync(secretName);
+
+                // When deleting a secret asynchronously before you purge it, you can await the WaitForCompletionAsync method on the operation
+                await deleteSecretOperation.WaitForCompletionAsync();
                 Console.WriteLine("done.");
 
                 // restore secret
                 Console.Write("Restoring secret from backup...");
-                byte[] secretBackup = backupResponse.Body.Value;
-                var restoreResponse = await sample.DataClient.RestoreSecretWithHttpMessagesAsync(vaultUri, secretBackup).ConfigureAwait(false);
+                await SecretClient.RestoreSecretBackupAsync(backupResponse.Value);
                 Console.WriteLine("done.");
 
                 // confirm existence
                 Console.Write("Verifying secret restoration...");
-                retrievedSecretResponse = await sample.DataClient.GetSecretWithHttpMessagesAsync(vaultUri, secretName, secretVersion: String.Empty).ConfigureAwait(false);
+                await sample.SecretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
             }
-            catch (KeyVaultErrorException kvee)
+            catch (RequestFailedException ex)
             {
-                Console.WriteLine("Unexpected KeyVault exception encountered: {0}", kvee.Message);
-
-                throw;
-            }
-            catch (CloudException ce)
-            {
-                Console.WriteLine("Unexpected ARM exception encountered: {0}", ce.Message);
+                Console.WriteLine("Unexpected KeyVault exception encountered: {0}", ex.Message);
 
                 throw;
             }
@@ -225,8 +208,7 @@ namespace AzureKeyVaultRecoverySamples
         #region helpers
         private async Task<VaultInner> CreateOrRetrieveVaultAsync(string resourceGroupName, string vaultName, bool enableSoftDelete, bool enablePurgeProtection)
         {
-            VaultInner vault = null;
-
+            VaultInner vault;
             try
             {
                 // check whether the vault exists
@@ -242,12 +224,12 @@ namespace AzureKeyVaultRecoverySamples
                     throw;
                 }
 
-                // create a new vault
+                // create a new vault when vault not exist
                 var vaultParameters = CreateVaultParameters(resourceGroupName, vaultName, context.PreferredLocation, enableSoftDelete, enablePurgeProtection);
 
                 // create new soft-delete-enabled vault
                 Console.Write("Vault does not exist; creating...");
-                vault = await ManagementClient.Vaults.CreateOrUpdateAsync(resourceGroupName, vaultName, vaultParameters).ConfigureAwait(false);
+                await ManagementClient.Vaults.CreateOrUpdateAsync(resourceGroupName, vaultName, vaultParameters).ConfigureAwait(false);
                 Console.WriteLine("done.");
 
                 // wait for the DNS record to propagate; verify properties

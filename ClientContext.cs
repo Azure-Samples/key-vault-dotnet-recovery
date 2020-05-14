@@ -2,6 +2,8 @@
 using System.Configuration;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
@@ -13,22 +15,24 @@ namespace AzureKeyVaultRecoverySamples
     /// </summary>
     public sealed class ClientContext
     {
-        private static ClientCredential _servicePrincipalCredential = null;
+        private static AzureCredentials _servicePrincipalCredential = null;
 
         #region construction
-        public static ClientContext Build(string tenantId, string objectId, string appId, string subscriptionId, string resourceGroupName, string location, string vaultName)
+        public static ClientContext Build(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string location, string vaultName)
         {
             if (String.IsNullOrWhiteSpace(tenantId)) throw new ArgumentException(nameof(tenantId));
+            if (String.IsNullOrWhiteSpace(clientSecret)) throw new ArgumentException(nameof(clientSecret));
+            if (String.IsNullOrWhiteSpace(clientId)) throw new ArgumentException(nameof(clientId));
             if (String.IsNullOrWhiteSpace(objectId)) throw new ArgumentException(nameof(objectId));
-            if (String.IsNullOrWhiteSpace(appId)) throw new ArgumentException(nameof(appId));
             if (String.IsNullOrWhiteSpace(subscriptionId)) throw new ArgumentException(nameof(subscriptionId));
             if (String.IsNullOrWhiteSpace(resourceGroupName)) throw new ArgumentException(nameof(resourceGroupName));
 
             return new ClientContext
             {
                 TenantId = tenantId,
+                ClientSecret = clientSecret,
+                ClientId = clientId,
                 ObjectId = objectId,
-                ApplicationId = appId,
                 SubscriptionId = subscriptionId,
                 ResourceGroupName = resourceGroupName,
                 PreferredLocation = location ?? "southcentralus",
@@ -40,9 +44,11 @@ namespace AzureKeyVaultRecoverySamples
         #region properties
         public string TenantId { get; set; }
 
-        public string ObjectId { get; set; }
+        public string ClientSecret { get; set; }
 
-        public string ApplicationId { get; set; }
+        public string ClientId { get; set; }
+
+        public string ObjectId { get; set; }
 
         public string SubscriptionId { get; set; }
 
@@ -60,49 +66,14 @@ namespace AzureKeyVaultRecoverySamples
         /// </summary>
         /// <param name="certificateThumbprint"></param>
         /// <returns></returns>
-        public static Task<ServiceClientCredentials> GetServiceCredentialsAsync( string tenantId, string applicationId, string appSecret )
+        public static AzureCredentials GetServiceCredentialsAsync(string clientId, string clientSecret, string tenantId)
         {
             if (_servicePrincipalCredential == null)
             {
-                _servicePrincipalCredential = new ClientCredential(applicationId, appSecret);
+                _servicePrincipalCredential = SdkContext.AzureCredentialsFactory.FromServicePrincipal(clientId, clientSecret, tenantId, AzureEnvironment.AzureGlobalCloud);
             }
 
-            return ApplicationTokenProvider.LoginSilentAsync(
-                tenantId,
-                _servicePrincipalCredential, 
-                ActiveDirectoryServiceSettings.Azure,
-                TokenCache.DefaultShared);
-        }
-
-        /// <summary>
-        /// Generic ADAL Authentication callback
-        /// </summary>
-        public static async Task<string> AcquireTokenAsync(string authority, string resource, string scope)
-        {
-            if (_servicePrincipalCredential == null)
-            {
-                // read directly from config
-                var appId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ApplicationId];
-                var spSecret = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPSecret];
-
-                _servicePrincipalCredential = new ClientCredential(appId, spSecret);
-            }
-
-            AuthenticationContext ctx = new AuthenticationContext(authority, false, TokenCache.DefaultShared);
-            AuthenticationResult result = await ctx.AcquireTokenAsync(resource, _servicePrincipalCredential).ConfigureAwait(false);
-
-            return result.AccessToken;
-        }
-
-        /// <summary>
-        /// Generic authentication callback for a specific tenant
-        /// </summary>
-        /// <param name="tenantId">Identifier of tenant where authentication takes place.</param>
-        /// <returns>Authentication callback.</returns>
-        /// <remarks>Consider moving this class out from Controllers.Core into a separate top-level lib.</remarks>
-        public static Func<Task<string>> GetAuthenticationCallback(string authority, string resource, string scope)
-        {
-            return () => { return AcquireTokenAsync(authority, resource, scope); };
+            return _servicePrincipalCredential;
         }
         #endregion
     }

@@ -25,8 +25,8 @@ namespace AzureKeyVaultRecoverySamples
         /// <param name="resourceGroupName">Resource group name.</param>
         /// <param name="vaultLocation">Location of the vault.</param>
         /// <param name="vaultName">Vault name.</param>
-        public KeyVaultRecoverySamples( string tenantId, string objectId, string appId, string appCredX5T, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName )
-            : base(tenantId, objectId, appId, appCredX5T, subscriptionId, resourceGroupName, vaultLocation, vaultName)
+        public KeyVaultRecoverySamples(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
+            : base(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName)
         { }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace AzureKeyVaultRecoverySamples
                 Console.WriteLine("done.");
 
                 // confirm the existence of the deleted vault
-                Console.Write("Retrieving deleted vault..."); 
+                Console.Write("Retrieving deleted vault...");
                 deletedVault = await sample.ManagementClient.Vaults.GetDeletedAsync(vaultName, retrievedVault.Location).ConfigureAwait(false);
                 Console.WriteLine("done; '{0}' deleted on: {1}, scheduled for purge on: {2}", deletedVault.Id, deletedVault.Properties.DeletionDate, deletedVault.Properties.ScheduledPurgeDate);
 
