@@ -4,68 +4,73 @@ languages:
 - csharp
 products:
 - azure
+- azure-storage
+- dotnet-core
 description: "This repo contains sample code demonstrating the backup/restore and recoverable deletion functionality of Azure Key Vault using the Azure .NET SDK."
-urlFragment: net-sdk-samples
+urlFragment: key-vault-dotnet-recovery
 ---
 
-# .NET SDK samples for recovering and restoring Azure Key Vault entities 
+# How to recover and restore Azure Key Vault entities with .NET 
 
-This repo contains sample code demonstrating the backup/restore and recoverable deletion functionality of Azure Key Vault using the [Azure .Net SDK](https://docs.microsoft.com/dotnet/api/overview/azure/key-vault?view=azure-dotnet). The scenarios covered by these samples include:
+## Prerequisites
 
-* Backing up and restoring Key Vault secrets and keys
-* Enabling recoverable deletion on creating a new vault
-* Enabling recoverable deletion on an existing vault
-* Recovering or permanently deleting deleted vaults
-* Recovering or permanently deleting Key Vault secrets, keys, and certificates
+To complete this tutorial:
 
-The recoverable deletion functionality is also referred to as 'soft delete'; consequently, a permanent, irrecoverable deletion is referred to as 'purge'.
+* Install .NET Core 2.0 version for [Linux] or [Windows]
 
-## Samples in this repo:
+If you don't have an Azure subscription, create a [free account] before you begin.
 
-* Back up and restore Key Vault entities
-* Enable soft delete
-* Delete, recover and purge a vault
-* Delete, recover and purge vault entities
+### Create an App registration using the Azure Portal
 
-## Getting Started
+*  Go to the [Azure Portal] and log in using your Azure account. 
+*  Search for and select **Azure Active Directory** > **Manage** > **App registrations**. 
+*  Select **New registration**.  
+*  Enter a name for your App registrations, then click **Register**.
+*  Under **Overview** select **Application (client) ID**, **Directory (tenant) ID**, and **Object ID** copy to text editor for later use.
+*  Under **Manage** > **Certificates & secrets** > **New client secret**, filter **Description** and click **Add**.
+*  Copy preview created secret value to text editor for later use.
 
-### Prerequisites
+## Run the application
+First, clone the repository on your machine:
 
-- OS: Windows
-- SDKs:
-    - Microsoft.Azure.Management.KeyVault.Fluent ver. 1.6.0+
-    - KeyVault data SDK: Microsoft.Azure.KeyVault ver. 2.3.2+
-- Azure:
-    - a subscription, in which you have the KeyVaultContributor role
-    - an Azure Active Directory application, created in the tenant associated with the subscription, and with access to KeyVault; please see [Accessing Key Vault from a native application](https://blogs.technet.microsoft.com/kv/2016/09/17/accessing-key-vault-from-a-native-application) for details.
-    - the credentials of the AAD application, in the form of a client secret 
-    
+```bash
+git clone https://github.com/Azure-Samples/key-vault-dotnet-recovery.git
+```
 
-### Installation
+Then, switch to the project folder to edit the app.config file, specifying the required parameters.
+```bash
+cd key-vault-dotnet-recovery
+```
+Finally, run the application with the `dotnet run` command.
 
-- open the solution in Visual Studio - NuGet should resolve the necessary packages
+```console
+dotnet run
+```
 
-
-### Quickstart
-Follow these steps to get started with this sample:
-
-1. git clone https://github.com/Azure-Samples/key-vault-dotnet-recovery.git
-2. cd key-vault-dotnet-recovery
-4. edit the app.config file, specifying the tenant, subscription, AD app id, object id and client secret
-5. dotnet run AzureKeyVaultRecoverySamples.csproj
-
-
-## Demo
-
-
-## Resources
-
-Please see the following links for additional information:
-
-- [Azure Key Vault soft-delete overview](https://docs.microsoft.com/azure/key-vault/key-vault-ovw-soft-delete)
-- [How to use Key Vault soft-delete with PowerShell](https://docs.microsoft.com/azure/key-vault/key-vault-soft-delete-powershell)
-- [How to use Key Vault soft-delete with CLI](https://docs.microsoft.com/azure/key-vault/key-vault-soft-delete-cli)
+## This sample shows how to do following operations of Azure Key Vault
+- Back up and restore Key Vault entities
+- Enable soft delete
+- Delete, recover and purge a vault
+- Delete, recover and purge vault entities
 
 The following samples are also related:
 
-- [Recovery scenario samples for Azure Key Vault using the Azure Python SDK](https://azure.microsoft.com/resources/samples/key-vault-recovery-python/)
+- [Recovery scenario samples for Azure Key Vault using the Azure Python SDK]
+
+## More information
+
+The [Azure Key Vault documentation] includes a rich set of tutorials and conceptual articles, which serve as a good complement to the samples.
+
+This project has adopted the [Microsoft Open Source Code of Conduct].
+For more information see the [Code of Conduct FAQ] or contact [opencode@microsoft.com] with any additional questions or comments.
+
+<!-- LINKS -->
+[Linux]: https://dotnet.microsoft.com/download
+[Windows]: https://dotnet.microsoft.com/download
+[free account]: https://azure.microsoft.com/free/?WT.mc_id=A261C142F
+[Azure Portal]: https://portal.azure.com
+[Recovery scenario samples for Azure Key Vault using the Azure Python SDK]: https://azure.microsoft.com/resources/samples/key-vault-recovery-python
+[Azure Key Vault documentation]: https://docs.microsoft.com/en-us/azure/key-vault/general/basic-concepts
+[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct
+[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq
+[opencode@microsoft.com]: mailto:opencode@microsoft.com
