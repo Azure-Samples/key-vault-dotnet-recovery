@@ -34,7 +34,7 @@ namespace AzureKeyVaultRecoverySamples
         protected SecretClient SecretClient { get; set; }
 
         /// <summary>
-        /// Use client secret credential to authenticating the secret client
+        /// Use client secret credential to authenticating the secret client.
         /// </summary>
         protected ClientSecretCredential ClientSecretCredential { get; set; }
 
@@ -42,16 +42,17 @@ namespace AzureKeyVaultRecoverySamples
         /// Builds a sample object from the specified parameters.
         /// </summary>
         /// <param name="tenantId">Tenant id.</param>
+        /// <param name="clientSecret">Representing the vault secret.</param>
+        /// <param name="clientId">AAD application id.</param>
         /// <param name="objectId">AAD object id.</param>
-        /// <param name="appId">AAD application id.</param>
-        /// <param name="appCredX5T">Thumbprint of certificate representing the AD application credential.</param>
         /// <param name="subscriptionId">Subscription id.</param>
         /// <param name="resourceGroupName">Resource group name.</param>
         /// <param name="vaultLocation">Vault location.</param>
         /// <param name="vaultName">Vault name.</param>
-        public KeyVaultSampleBase(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
+        /// <param name="azureEnvironment">Azure authority hosts.</param>
+        public KeyVaultSampleBase(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName, string azureEnvironment)
         {
-            InstantiateSample(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName);
+            InstantiateSample(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName, azureEnvironment);
         }
 
         /// <summary>
@@ -68,17 +69,19 @@ namespace AzureKeyVaultRecoverySamples
             var resourceGroupName = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ResourceGroupName];
             var vaultLocation = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.VaultLocation];
             var vaultName = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.VaultName];
+            var azureEnvironment = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.AzureEnvironment];
 
-            InstantiateSample(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName);
+            InstantiateSample(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName, azureEnvironment);
         }
 
-        private void InstantiateSample(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
-        {
+        private void InstantiateSample(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName, string azureEnvironment)
+        {           
             context = ClientContext.Build(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName);
 
+            var environment = context.Environment(azureEnvironment);
             // log in with as the specified service principal
-            var credential = Task.Run(() => ClientContext.GetServiceCredentialsAsync(clientId, clientSecret, tenantId)).ConfigureAwait(false).GetAwaiter().GetResult();
-
+            var credential = Task.Run(() => context.GetAzureCredentialsAsync(clientId, clientSecret, tenantId, environment)).ConfigureAwait(false).GetAwaiter().GetResult();
+            
             var restClient = RestClient.Configure()
                 .WithEnvironment(credential.Environment)
                 .WithCredentials(credential)
@@ -87,7 +90,11 @@ namespace AzureKeyVaultRecoverySamples
             ManagementClient = new KeyVaultManagementClient(restClient);
             ManagementClient.SubscriptionId = subscriptionId;
 
-            ClientSecretCredential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+            //Get current Authority Host for Azure
+            TokenCredentialOptions options = new TokenCredentialOptions();
+            options.AuthorityHost = new Uri(environment.AuthenticationEndpoint);
+
+            ClientSecretCredential = new ClientSecretCredential(tenantId, clientId, clientSecret, options);
         }
 
         #region utilities

@@ -17,15 +17,16 @@ namespace AzureKeyVaultRecoverySamples
         /// Builds a vault recovery sample object with the specified parameters.
         /// </summary>
         /// <param name="tenantId">Tenant id.</param>
-        /// <param name="objectId">Object id of the Service Principal used to run the sample.</param>
-        /// <param name="appId">AD application id.</param>
-        /// <param name="appCredX5T">Thumbprint of the certificate set as the credential for the AD application.</param>
+        /// <param name="clientSecret">Representing the vault secret.</param>
+        /// <param name="clientId">AAD application id.</param>
+        /// <param name="objectId">AAD object id.</param>
         /// <param name="subscriptionId">Subscription id.</param>
         /// <param name="resourceGroupName">Resource group name.</param>
-        /// <param name="vaultLocation">Location of the vault.</param>
+        /// <param name="vaultLocation">Vault location.</param>
         /// <param name="vaultName">Vault name.</param>
-        public KeyVaultEntityRecoverySamples(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
-            : base(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName)
+        /// <param name="azureEnvironment">Azure authority hosts.</param>
+        public KeyVaultEntityRecoverySamples(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName, string azureEnvironment)
+            : base(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName, azureEnvironment)
         { }
 
         /// <summary>
@@ -102,9 +103,9 @@ namespace AzureKeyVaultRecoverySamples
                 Console.WriteLine("done.");
 
                 // delete secret
-                Console.Write("Deleting secret (pass #2)...");
-                DeleteSecretOperation deleteSecretOperation2 = await SecretClient.StartDeleteSecretAsync(secretName);
-                await deleteSecretOperation2.WaitForCompletionAsync();
+                Console.Write("Deleting recorvered secret...");
+                DeleteSecretOperation deleteRecoveredSecretOperation = await SecretClient.StartDeleteSecretAsync(secretName);
+                await deleteRecoveredSecretOperation.WaitForCompletionAsync();
                 Console.WriteLine("done.");
 
                 // retrieve deleted secret
@@ -187,7 +188,7 @@ namespace AzureKeyVaultRecoverySamples
 
                 // confirm existence
                 Console.Write("Verifying secret restoration...");
-                await sample.SecretClient.GetSecretAsync(secretName);
+                await SecretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
             }
             catch (RequestFailedException ex)

@@ -1,12 +1,6 @@
-﻿using System;
-using System.Configuration;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
+﻿using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using Microsoft.Rest;
-using Microsoft.Rest.Azure.Authentication;
+using System;
 
 namespace AzureKeyVaultRecoverySamples
 {
@@ -15,8 +9,6 @@ namespace AzureKeyVaultRecoverySamples
     /// </summary>
     public sealed class ClientContext
     {
-        private static AzureCredentials _servicePrincipalCredential = null;
-
         #region construction
         public static ClientContext Build(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string location, string vaultName)
         {
@@ -66,14 +58,29 @@ namespace AzureKeyVaultRecoverySamples
         /// </summary>
         /// <param name="certificateThumbprint"></param>
         /// <returns></returns>
-        public static AzureCredentials GetServiceCredentialsAsync(string clientId, string clientSecret, string tenantId)
+        public AzureCredentials GetAzureCredentialsAsync(string clientId, string clientSecret, string tenantId, AzureEnvironment environment)
         {
-            if (_servicePrincipalCredential == null)
-            {
-                _servicePrincipalCredential = SdkContext.AzureCredentialsFactory.FromServicePrincipal(clientId, clientSecret, tenantId, AzureEnvironment.AzureGlobalCloud);
-            }
+            return SdkContext.AzureCredentialsFactory.FromServicePrincipal(clientId, clientSecret, tenantId, environment); 
+        }
 
-            return _servicePrincipalCredential;
+        public AzureEnvironment Environment(string azureEnvironment)
+        {
+            if (string.Equals(azureEnvironment, "AzureChinaCloud", StringComparison.OrdinalIgnoreCase))
+            {
+                return AzureEnvironment.AzureChinaCloud;
+            }
+            else if (string.Equals(azureEnvironment, "AzureGermanCloud", StringComparison.OrdinalIgnoreCase))
+            {
+                return AzureEnvironment.AzureGermanCloud;
+            }
+            else if (string.Equals(azureEnvironment, "AzureUSGovernment", StringComparison.OrdinalIgnoreCase))
+            {
+                return AzureEnvironment.AzureUSGovernment;
+            }
+            else
+            {
+                return AzureEnvironment.AzureGlobalCloud;
+            }
         }
         #endregion
     }
