@@ -49,7 +49,7 @@ namespace AzureKeyVaultRecoverySamples
             var rgName = sample.context.ResourceGroupName;
 
             // derive a unique vault name for this sample
-            var vaultName = sample.context.VaultName + "invault99";
+            var vaultName = sample.context.VaultName + "invault";
             var secretName = "recoverysample";
 
             // retrieve the vault (or create, if it doesn't exist)
@@ -141,7 +141,7 @@ namespace AzureKeyVaultRecoverySamples
             var rgName = sample.context.ResourceGroupName;
 
             // derive a unique vault name for this sample
-            var vaultName = sample.context.VaultName + "backup99";
+            var vaultName = sample.context.VaultName + "backuprestore";
             var secretName = "backupsample";
 
             // retrieve the vault (or create, if it doesn't exist)
