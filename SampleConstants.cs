@@ -18,7 +18,6 @@ namespace AzureKeyVaultRecoverySamples
             public static readonly string SPObjectId = "SPObjectId";
             public static readonly string SPSecret = "SPSecret";
             public static readonly string ApplicationId = "ApplicationId";
-            public static readonly string AzureEnvironment = "AzureEnvironment";
         }
 
         /// <summary>

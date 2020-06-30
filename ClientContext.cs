@@ -1,6 +1,8 @@
-﻿using Microsoft.Azure.Management.ResourceManager.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
+﻿using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using Microsoft.Rest;
+using Microsoft.Rest.Azure.Authentication;
 using System;
+using System.Threading.Tasks;
 
 namespace AzureKeyVaultRecoverySamples
 {
@@ -9,22 +11,22 @@ namespace AzureKeyVaultRecoverySamples
     /// </summary>
     public sealed class ClientContext
     {
+        private static ClientCredential _servicePrincipalCredential = null;
+
         #region construction
-        public static ClientContext Build(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string location, string vaultName)
+        public static ClientContext Build(string tenantId, string objectId, string appId, string subscriptionId, string resourceGroupName, string location, string vaultName)
         {
             if (String.IsNullOrWhiteSpace(tenantId)) throw new ArgumentException(nameof(tenantId));
-            if (String.IsNullOrWhiteSpace(clientSecret)) throw new ArgumentException(nameof(clientSecret));
-            if (String.IsNullOrWhiteSpace(clientId)) throw new ArgumentException(nameof(clientId));
             if (String.IsNullOrWhiteSpace(objectId)) throw new ArgumentException(nameof(objectId));
+            if (String.IsNullOrWhiteSpace(appId)) throw new ArgumentException(nameof(appId));
             if (String.IsNullOrWhiteSpace(subscriptionId)) throw new ArgumentException(nameof(subscriptionId));
             if (String.IsNullOrWhiteSpace(resourceGroupName)) throw new ArgumentException(nameof(resourceGroupName));
 
             return new ClientContext
             {
                 TenantId = tenantId,
-                ClientSecret = clientSecret,
-                ClientId = clientId,
                 ObjectId = objectId,
+                ApplicationId = appId,
                 SubscriptionId = subscriptionId,
                 ResourceGroupName = resourceGroupName,
                 PreferredLocation = location ?? "southcentralus",
@@ -36,11 +38,9 @@ namespace AzureKeyVaultRecoverySamples
         #region properties
         public string TenantId { get; set; }
 
-        public string ClientSecret { get; set; }
-
-        public string ClientId { get; set; }
-
         public string ObjectId { get; set; }
+
+        public string ApplicationId { get; set; }
 
         public string SubscriptionId { get; set; }
 
@@ -58,29 +58,18 @@ namespace AzureKeyVaultRecoverySamples
         /// </summary>
         /// <param name="certificateThumbprint"></param>
         /// <returns></returns>
-        public AzureCredentials GetAzureCredentialsAsync(string clientId, string clientSecret, string tenantId, AzureEnvironment environment)
+        public static Task<ServiceClientCredentials> GetServiceCredentialsAsync(string tenantId, string applicationId, string appSecret)
         {
-            return SdkContext.AzureCredentialsFactory.FromServicePrincipal(clientId, clientSecret, tenantId, environment); 
-        }
+            if (_servicePrincipalCredential == null)
+            {
+                _servicePrincipalCredential = new ClientCredential(applicationId, appSecret);
+            }
 
-        public AzureEnvironment Environment(string azureEnvironment)
-        {
-            if (string.Equals(azureEnvironment, "AzureChinaCloud", StringComparison.OrdinalIgnoreCase))
-            {
-                return AzureEnvironment.AzureChinaCloud;
-            }
-            else if (string.Equals(azureEnvironment, "AzureGermanCloud", StringComparison.OrdinalIgnoreCase))
-            {
-                return AzureEnvironment.AzureGermanCloud;
-            }
-            else if (string.Equals(azureEnvironment, "AzureUSGovernment", StringComparison.OrdinalIgnoreCase))
-            {
-                return AzureEnvironment.AzureUSGovernment;
-            }
-            else
-            {
-                return AzureEnvironment.AzureGlobalCloud;
-            }
+            return ApplicationTokenProvider.LoginSilentAsync(
+                tenantId,
+                _servicePrincipalCredential,
+                ActiveDirectoryServiceSettings.Azure,
+                TokenCache.DefaultShared);
         }
         #endregion
     }

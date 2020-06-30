@@ -1,8 +1,9 @@
-﻿using Azure.Identity;
+﻿using Azure;
+using Azure.Core;
+using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using Microsoft.Azure.Management.KeyVault.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent.Models;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Rest;
 using System;
 using System.Collections.Generic;
@@ -29,30 +30,30 @@ namespace AzureKeyVaultRecoverySamples
         public KeyVaultManagementClient ManagementClient { get; private set; }
 
         /// <summary>
-        /// KeyVault secret (Data Plane) client instance.
+        /// KeyVault data (Data Plane) client instance.
         /// </summary>
-        protected SecretClient SecretClient { get; set; }
+        public SecretClient getDataClient(Uri vaultUri)
+        {
+            return new SecretClient(vaultUri, TokenCredential );
+        }
 
-        /// <summary>
-        /// Use client secret credential to authenticating the secret client.
-        /// </summary>
-        protected ClientSecretCredential ClientSecretCredential { get; set; }
+        
+        protected TokenCredential TokenCredential { get; set; }
 
         /// <summary>
         /// Builds a sample object from the specified parameters.
         /// </summary>
         /// <param name="tenantId">Tenant id.</param>
-        /// <param name="clientSecret">Representing the vault secret.</param>
-        /// <param name="clientId">AAD application id.</param>
         /// <param name="objectId">AAD object id.</param>
+        /// <param name="appId">AAD application id.</param>
+        /// <param name="appCredX5T">Thumbprint of certificate representing the AD application credential.</param>
         /// <param name="subscriptionId">Subscription id.</param>
         /// <param name="resourceGroupName">Resource group name.</param>
         /// <param name="vaultLocation">Vault location.</param>
         /// <param name="vaultName">Vault name.</param>
-        /// <param name="azureEnvironment">Azure authority hosts.</param>
-        public KeyVaultSampleBase(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName, string azureEnvironment)
+        public KeyVaultSampleBase(string tenantId, string objectId, string appId, string appCredX5T, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
         {
-            InstantiateSample(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName, azureEnvironment);
+            InstantiateSample(tenantId, objectId, appId, appCredX5T, subscriptionId, resourceGroupName, vaultLocation, vaultName);
         }
 
         /// <summary>
@@ -62,39 +63,30 @@ namespace AzureKeyVaultRecoverySamples
         {
             // retrieve parameters from configuration
             var tenantId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.TenantId];
-            var objectId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPObjectId];
-            var clientSecret = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPSecret];
-            var clientId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ApplicationId];
+            var spObjectId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPObjectId];
+            var spSecret = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPSecret];
+            var appId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ApplicationId];
             var subscriptionId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SubscriptionId];
             var resourceGroupName = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ResourceGroupName];
             var vaultLocation = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.VaultLocation];
             var vaultName = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.VaultName];
-            var azureEnvironment = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.AzureEnvironment];
 
-            InstantiateSample(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName, azureEnvironment);
+            InstantiateSample(tenantId, spObjectId, appId, spSecret, subscriptionId, resourceGroupName, vaultLocation, vaultName);
         }
 
-        private void InstantiateSample(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName, string azureEnvironment)
-        {           
-            context = ClientContext.Build(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName);
+        private void InstantiateSample(string tenantId, string objectId, string appId, string appSecret, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
+        {
+            context = ClientContext.Build(tenantId, objectId, appId, subscriptionId, resourceGroupName, vaultLocation, vaultName);
 
-            var environment = context.Environment(azureEnvironment);
             // log in with as the specified service principal
-            var credential = Task.Run(() => context.GetAzureCredentialsAsync(clientId, clientSecret, tenantId, environment)).ConfigureAwait(false).GetAwaiter().GetResult();
-            
-            var restClient = RestClient.Configure()
-                .WithEnvironment(credential.Environment)
-                .WithCredentials(credential)
-                .Build();
+            var serviceCredentials = Task.Run(() => ClientContext.GetServiceCredentialsAsync(tenantId, appId, appSecret)).ConfigureAwait(false).GetAwaiter().GetResult();
 
-            ManagementClient = new KeyVaultManagementClient(restClient);
+            // instantiate the management client
+            ManagementClient = new KeyVaultManagementClient(serviceCredentials);
             ManagementClient.SubscriptionId = subscriptionId;
 
-            //Get current Authority Host for Azure
-            TokenCredentialOptions options = new TokenCredentialOptions();
-            options.AuthorityHost = new Uri(environment.AuthenticationEndpoint);
-
-            ClientSecretCredential = new ClientSecretCredential(tenantId, clientId, clientSecret, options);
+            // instantiate the TokenCredential for data client authtication
+            TokenCredential = new DefaultAzureCredential();
         }
 
         #region utilities
@@ -107,7 +99,7 @@ namespace AzureKeyVaultRecoverySamples
         /// <param name="enableSoftDelete"></param>
         /// <param name="enablePurgeProtection"></param>
         /// <returns></returns>
-        protected VaultCreateOrUpdateParameters CreateVaultParameters(string resourceGroupName, string vaultName, string vaultLocation, bool enableSoftDelete, bool enablePurgeProtection)
+        protected VaultCreateOrUpdateParametersInner CreateVaultParameters(string resourceGroupName, string vaultName, string vaultLocation, bool enableSoftDelete, bool enablePurgeProtection)
         {
             var properties = new VaultProperties
             {
@@ -121,8 +113,6 @@ namespace AzureKeyVaultRecoverySamples
                 CreateMode = CreateMode.Default
             };
 
-
-
             // add an access control entry for the test SP
             properties.AccessPolicies.Add(new AccessPolicyEntry
             {
@@ -130,12 +120,11 @@ namespace AzureKeyVaultRecoverySamples
                 ObjectId = context.ObjectId,
                 Permissions = new Permissions
                 {
-                    Secrets = new SecretPermissions[] { SecretPermissions.Get, SecretPermissions.Set,SecretPermissions.List,
-                        SecretPermissions.Delete,SecretPermissions.Recover,SecretPermissions.Backup,SecretPermissions.Restore,SecretPermissions.Purge}
+                    Secrets = new string[] { "get", "set", "list", "delete", "recover", "backup", "restore", "purge" },
                 }
             });
 
-            return new VaultCreateOrUpdateParameters(vaultLocation, properties);
+            return new VaultCreateOrUpdateParametersInner(vaultLocation, properties);
         }
 
         /// <summary>
@@ -159,14 +148,13 @@ namespace AzureKeyVaultRecoverySamples
                 && vault.Properties.EnableSoftDelete.Value)
             {
                 Console.WriteLine("The required recovery protection level is already enabled on vault {0}.", vaultName);
-
                 return;
             }
 
             vault.Properties.EnableSoftDelete = true;
 
             // prepare the update operation on the vault
-            var updateParameters = new VaultCreateOrUpdateParameters
+            var updateParameters = new VaultCreateOrUpdateParametersInner
             {
                 Location = vault.Location,
                 Properties = vault.Properties,
@@ -236,9 +224,9 @@ namespace AzureKeyVaultRecoverySamples
 
                     break;
                 }
-                catch (Microsoft.Azure.KeyVault.Models.KeyVaultErrorException kvee)
+                catch (RequestFailedException kvee)
                 {
-                    var statusCode = kvee.Response.StatusCode;
+                    HttpStatusCode statusCode = (HttpStatusCode)kvee.Status;
 
                     Console.Write("attempt #{0} to {1} returned: {2};", idx, functionName, statusCode);
                     if (continueOn.Contains(statusCode))

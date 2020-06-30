@@ -18,16 +18,15 @@ namespace AzureKeyVaultRecoverySamples
         /// Builds a vault recovery sample object with the specified parameters.
         /// </summary>
         /// <param name="tenantId">Tenant id.</param>
-        /// <param name="clientSecret">Representing the vault secret.</param>
-        /// <param name="clientId">AAD application id.</param>
-        /// <param name="objectId">AAD object id.</param>
+        /// <param name="objectId">Object id of the Service Principal used to run the sample.</param>
+        /// <param name="appId">AD application id.</param>
+        /// <param name="appCredX5T">Thumbprint of the certificate set as the credential for the AD application.</param>
         /// <param name="subscriptionId">Subscription id.</param>
         /// <param name="resourceGroupName">Resource group name.</param>
-        /// <param name="vaultLocation">Vault location.</param>
+        /// <param name="vaultLocation">Location of the vault.</param>
         /// <param name="vaultName">Vault name.</param>
-        /// <param name="azureEnvironment">Azure authority hosts.</param>
-        public KeyVaultRecoverySamples(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName, string azureEnvironment)
-            : base(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName, azureEnvironment)
+        public KeyVaultRecoverySamples(string tenantId, string objectId, string appId, string appCredX5T, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
+            : base(tenantId, objectId, appId, appCredX5T, subscriptionId, resourceGroupName, vaultLocation, vaultName)
         { }
 
         /// <summary>

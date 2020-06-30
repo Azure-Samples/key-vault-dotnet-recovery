@@ -17,16 +17,15 @@ namespace AzureKeyVaultRecoverySamples
         /// Builds a vault recovery sample object with the specified parameters.
         /// </summary>
         /// <param name="tenantId">Tenant id.</param>
-        /// <param name="clientSecret">Representing the vault secret.</param>
-        /// <param name="clientId">AAD application id.</param>
-        /// <param name="objectId">AAD object id.</param>
+        /// <param name="objectId">Object id of the Service Principal used to run the sample.</param>
+        /// <param name="appId">AD application id.</param>
+        /// <param name="appCredX5T">Thumbprint of the certificate set as the credential for the AD application.</param>
         /// <param name="subscriptionId">Subscription id.</param>
         /// <param name="resourceGroupName">Resource group name.</param>
-        /// <param name="vaultLocation">Vault location.</param>
+        /// <param name="vaultLocation">Location of the vault.</param>
         /// <param name="vaultName">Vault name.</param>
-        /// <param name="azureEnvironment">Azure authority hosts.</param>
-        public KeyVaultEntityRecoverySamples(string tenantId, string clientSecret, string clientId, string objectId, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName, string azureEnvironment)
-            : base(tenantId, clientSecret, clientId, objectId, subscriptionId, resourceGroupName, vaultLocation, vaultName, azureEnvironment)
+        public KeyVaultEntityRecoverySamples(string tenantId, string objectId, string appId, string appCredX5T, string subscriptionId, string resourceGroupName, string vaultLocation, string vaultName)
+            : base(tenantId, objectId, appId, appCredX5T, subscriptionId, resourceGroupName, vaultLocation, vaultName)
         { }
 
         /// <summary>
@@ -42,20 +41,22 @@ namespace AzureKeyVaultRecoverySamples
         /// Assumes the caller has the KeyVaultContributor role in the subscription.
         /// </summary>
         /// <returns>Task representing this functionality.</returns>
-        public async Task DemonstrateRecoveryAndPurgeAsync()
+        public static async Task DemonstrateRecoveryAndPurgeAsync()
         {
-            // derive a unique vault name for this sample
-            var vaultName = context.VaultName + "invault";
+            // instantiate the samples object
+            var sample = new KeyVaultEntityRecoverySamples();
 
-            var rgName = context.ResourceGroupName;
+            var rgName = sample.context.ResourceGroupName;
+
+            // derive a unique vault name for this sample
+            var vaultName = sample.context.VaultName + "invault99";
             var secretName = "recoverysample";
 
             // retrieve the vault (or create, if it doesn't exist)
-            var vault = await CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: true, enablePurgeProtection: false);
+            var vault = await sample.CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: true, enablePurgeProtection: false);
             var vaultUri = vault.Properties.VaultUri;
 
-            // create a secret client to interact with key vault secret
-            SecretClient = new SecretClient(new Uri(vaultUri), ClientSecretCredential);
+            SecretClient SecretClient = sample.getDataClient(new Uri(vaultUri));
 
             Console.WriteLine("Operating with vault name '{0}' in resource group '{1}' and location '{2}'", vaultName, rgName, vault.Location);
 
@@ -80,8 +81,8 @@ namespace AzureKeyVaultRecoverySamples
 
                     return;
                 }
-
                 Console.WriteLine("done.");
+
 
                 // delete secret
                 Console.Write("Deleting secret...");
@@ -112,13 +113,9 @@ namespace AzureKeyVaultRecoverySamples
                 Console.Write("Retrieving the deleted secret...");
                 await SecretClient.GetDeletedSecretAsync(secretName);
                 Console.WriteLine("done.");
-
-                // purge secret
-                Console.Write("Purging deleted secret...");
-                await SecretClient.PurgeDeletedSecretAsync(secretName);
-                Console.WriteLine("done.");
             }
             catch (RequestFailedException ex)
+
             {
                 Console.WriteLine("Unexpected KeyVault exception encountered: {0}", ex.Message);
 
@@ -136,7 +133,7 @@ namespace AzureKeyVaultRecoverySamples
         /// Demonstrates how to back up and restore a secret.
         /// </summary>
         /// <returns>Task representing this functionality.</returns>
-        public async Task DemonstrateBackupAndRestoreAsync()
+        public static async Task DemonstrateBackupAndRestoreAsync()
         {
             // instantiate the samples object
             var sample = new KeyVaultEntityRecoverySamples();
@@ -144,15 +141,14 @@ namespace AzureKeyVaultRecoverySamples
             var rgName = sample.context.ResourceGroupName;
 
             // derive a unique vault name for this sample
-            var vaultName = sample.context.VaultName + "backuprestore";
+            var vaultName = sample.context.VaultName + "backup99";
             var secretName = "backupsample";
 
             // retrieve the vault (or create, if it doesn't exist)
             var vault = await sample.CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: false, enablePurgeProtection: false);
             var vaultUri = vault.Properties.VaultUri;
 
-            // create a secret client to interact with key vault secret
-            SecretClient = new SecretClient(new Uri(vaultUri), ClientSecretCredential);
+            SecretClient SecretClient = sample.getDataClient(new Uri(vaultUri));
 
             Console.WriteLine("Operating with vault name '{0}' in resource group '{1}' and location '{2}'", vaultName, rgName, vault.Location);
 
@@ -176,7 +172,6 @@ namespace AzureKeyVaultRecoverySamples
                 // delete secret
                 Console.Write("Deleting secret...");
                 DeleteSecretOperation deleteSecretOperation = await SecretClient.StartDeleteSecretAsync(secretName);
-
                 // When deleting a secret asynchronously before you purge it, you can await the WaitForCompletionAsync method on the operation
                 await deleteSecretOperation.WaitForCompletionAsync();
                 Console.WriteLine("done.");
@@ -193,7 +188,7 @@ namespace AzureKeyVaultRecoverySamples
             }
             catch (RequestFailedException ex)
             {
-                Console.WriteLine("Unexpected KeyVault exception encountered: {0}", ex.Message);
+                Console.WriteLine("Unexpected KeyVault  exception encountered: {0}", ex.Message);
 
                 throw;
             }
@@ -209,7 +204,8 @@ namespace AzureKeyVaultRecoverySamples
         #region helpers
         private async Task<VaultInner> CreateOrRetrieveVaultAsync(string resourceGroupName, string vaultName, bool enableSoftDelete, bool enablePurgeProtection)
         {
-            VaultInner vault;
+            VaultInner vault = null;
+
             try
             {
                 // check whether the vault exists
@@ -225,12 +221,12 @@ namespace AzureKeyVaultRecoverySamples
                     throw;
                 }
 
-                // create a new vault when vault not exist
+                // create a new vault
                 var vaultParameters = CreateVaultParameters(resourceGroupName, vaultName, context.PreferredLocation, enableSoftDelete, enablePurgeProtection);
 
                 // create new soft-delete-enabled vault
                 Console.Write("Vault does not exist; creating...");
-                await ManagementClient.Vaults.CreateOrUpdateAsync(resourceGroupName, vaultName, vaultParameters).ConfigureAwait(false);
+                vault = await ManagementClient.Vaults.CreateOrUpdateAsync(resourceGroupName, vaultName, vaultParameters).ConfigureAwait(false);
                 Console.WriteLine("done.");
 
                 // wait for the DNS record to propagate; verify properties
