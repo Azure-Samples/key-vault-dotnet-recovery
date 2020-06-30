@@ -37,7 +37,6 @@ namespace AzureKeyVaultRecoverySamples
             return new SecretClient(vaultUri, TokenCredential );
         }
 
-        
         protected TokenCredential TokenCredential { get; set; }
 
         /// <summary>
