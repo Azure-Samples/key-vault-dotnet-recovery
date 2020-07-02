@@ -56,7 +56,7 @@ namespace AzureKeyVaultRecoverySamples
             var vault = await sample.CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: true, enablePurgeProtection: false);
             var vaultUri = vault.Properties.VaultUri;
 
-            SecretClient SecretClient = sample.getDataClient(new Uri(vaultUri));
+            SecretClient secretClient = sample.getDataClient(new Uri(vaultUri));
 
             Console.WriteLine("Operating with vault name '{0}' in resource group '{1}' and location '{2}'", vaultName, rgName, vault.Location);
 
@@ -64,12 +64,12 @@ namespace AzureKeyVaultRecoverySamples
             {
                 // set a secret
                 Console.Write("Setting a new value for secret '{0}'...", secretName);
-                await SecretClient.SetSecretAsync(secretName, Guid.NewGuid().ToString());
+                await secretClient.SetSecretAsync(secretName, Guid.NewGuid().ToString());
                 Console.WriteLine("done.");
 
                 // confirm existence
                 Console.Write("Verifying secret creation...");
-                Response<KeyVaultSecret> retrievedSecretResponse = await SecretClient.GetSecretAsync(secretName);
+                Response<KeyVaultSecret> retrievedSecretResponse = await secretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // confirm recovery is possible
@@ -86,7 +86,7 @@ namespace AzureKeyVaultRecoverySamples
 
                 // delete secret
                 Console.Write("Deleting secret...");
-                DeleteSecretOperation deleteSecretOperation = await SecretClient.StartDeleteSecretAsync(secretName);
+                DeleteSecretOperation deleteSecretOperation = await secretClient.StartDeleteSecretAsync(secretName);
 
                 // When deleting a secret asynchronously before you purge it, you can await the WaitForCompletionAsync method on the operation
                 await deleteSecretOperation.WaitForCompletionAsync();
@@ -94,24 +94,24 @@ namespace AzureKeyVaultRecoverySamples
 
                 // recover secret
                 Console.Write("Recovering deleted secret...");
-                RecoverDeletedSecretOperation recoverDeletedSecretOperation = await SecretClient.StartRecoverDeletedSecretAsync(secretName);
+                RecoverDeletedSecretOperation recoverDeletedSecretOperation = await secretClient.StartRecoverDeletedSecretAsync(secretName);
                 await recoverDeletedSecretOperation.WaitForCompletionAsync();
                 Console.WriteLine("done.");
 
                 // confirm recovery
                 Console.Write("Retrieving recovered secret...");
-                await SecretClient.GetSecretAsync(secretName);
+                await secretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // delete secret
                 Console.Write("Deleting recorvered secret...");
-                DeleteSecretOperation deleteRecoveredSecretOperation = await SecretClient.StartDeleteSecretAsync(secretName);
+                DeleteSecretOperation deleteRecoveredSecretOperation = await secretClient.StartDeleteSecretAsync(secretName);
                 await deleteRecoveredSecretOperation.WaitForCompletionAsync();
                 Console.WriteLine("done.");
 
                 // retrieve deleted secret
                 Console.Write("Retrieving the deleted secret...");
-                await SecretClient.GetDeletedSecretAsync(secretName);
+                await secretClient.GetDeletedSecretAsync(secretName);
                 Console.WriteLine("done.");
             }
             catch (RequestFailedException ex)
@@ -148,7 +148,7 @@ namespace AzureKeyVaultRecoverySamples
             var vault = await sample.CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: false, enablePurgeProtection: false);
             var vaultUri = vault.Properties.VaultUri;
 
-            SecretClient SecretClient = sample.getDataClient(new Uri(vaultUri));
+            SecretClient secretClient = sample.getDataClient(new Uri(vaultUri));
 
             Console.WriteLine("Operating with vault name '{0}' in resource group '{1}' and location '{2}'", vaultName, rgName, vault.Location);
 
@@ -156,34 +156,34 @@ namespace AzureKeyVaultRecoverySamples
             {
                 // set a secret
                 Console.Write("Setting a new value for secret '{0}'...", secretName);
-                await SecretClient.SetSecretAsync(secretName, Guid.NewGuid().ToString());
+                await secretClient.SetSecretAsync(secretName, Guid.NewGuid().ToString());
                 Console.WriteLine("done.");
 
                 // confirm existence
                 Console.Write("Verifying secret creation...");
-                await SecretClient.GetSecretAsync(secretName);
+                await secretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // backup secret
                 Console.Write("Backing up secret...");
-                Response<byte[]> backupResponse = await SecretClient.BackupSecretAsync(secretName);
+                Response<byte[]> backupResponse = await secretClient.BackupSecretAsync(secretName);
                 Console.WriteLine("done.");
 
                 // delete secret
                 Console.Write("Deleting secret...");
-                DeleteSecretOperation deleteSecretOperation = await SecretClient.StartDeleteSecretAsync(secretName);
+                DeleteSecretOperation deleteSecretOperation = await secretClient.StartDeleteSecretAsync(secretName);
                 // When deleting a secret asynchronously before you purge it, you can await the WaitForCompletionAsync method on the operation
                 await deleteSecretOperation.WaitForCompletionAsync();
                 Console.WriteLine("done.");
 
                 // restore secret
                 Console.Write("Restoring secret from backup...");
-                await SecretClient.RestoreSecretBackupAsync(backupResponse.Value);
+                await secretClient.RestoreSecretBackupAsync(backupResponse.Value);
                 Console.WriteLine("done.");
 
                 // confirm existence
                 Console.Write("Verifying secret restoration...");
-                await SecretClient.GetSecretAsync(secretName);
+                await secretClient.GetSecretAsync(secretName);
                 Console.WriteLine("done.");
             }
             catch (RequestFailedException ex)

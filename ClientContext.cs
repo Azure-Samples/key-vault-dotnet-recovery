@@ -1,4 +1,6 @@
-﻿using Microsoft.IdentityModel.Clients.ActiveDirectory;
+﻿using Azure.Core;
+using Azure.Identity;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
 using System;
@@ -70,6 +72,16 @@ namespace AzureKeyVaultRecoverySamples
                 _servicePrincipalCredential,
                 ActiveDirectoryServiceSettings.Azure,
                 TokenCache.DefaultShared);
+        }
+
+        /// <summary>
+        /// Generic Authentication Credential
+        /// </summary>
+
+        public static TokenCredential GetTokenCredential(bool includeInteractiveCredentials=false)
+        {
+            return new DefaultAzureCredential(includeInteractiveCredentials);
+
         }
         #endregion
     }
