@@ -56,7 +56,7 @@ namespace AzureKeyVaultRecoverySamples
             var vault = await sample.CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: true, enablePurgeProtection: false);
             var vaultUri = vault.Properties.VaultUri;
 
-            SecretClient secretClient = sample.getDataClient(new Uri(vaultUri));
+            SecretClient secretClient = sample.GetDataClient(new Uri(vaultUri));
 
             Console.WriteLine("Operating with vault name '{0}' in resource group '{1}' and location '{2}'", vaultName, rgName, vault.Location);
 
@@ -148,7 +148,7 @@ namespace AzureKeyVaultRecoverySamples
             var vault = await sample.CreateOrRetrieveVaultAsync(rgName, vaultName, enableSoftDelete: false, enablePurgeProtection: false);
             var vaultUri = vault.Properties.VaultUri;
 
-            SecretClient secretClient = sample.getDataClient(new Uri(vaultUri));
+            SecretClient secretClient = sample.GetDataClient(new Uri(vaultUri));
 
             Console.WriteLine("Operating with vault name '{0}' in resource group '{1}' and location '{2}'", vaultName, rgName, vault.Location);
 

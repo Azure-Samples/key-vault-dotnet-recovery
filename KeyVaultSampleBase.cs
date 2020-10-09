@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using Microsoft.Azure.Management.KeyVault.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent.Models;
@@ -21,7 +22,7 @@ namespace AzureKeyVaultRecoverySamples
         /// Represents the client context - Azure tenant, subscription, identity etc.
         /// </summary>
         protected ClientContext context;
-                
+        
         /// <summary>
         /// KeyVault management (Control Plane) client instance.
         /// </summary>
@@ -30,9 +31,9 @@ namespace AzureKeyVaultRecoverySamples
         /// <summary>
         /// KeyVault data (Data Plane) client instance.
         /// </summary>
-        public SecretClient getDataClient(Uri vaultUri)
+        public SecretClient GetDataClient(Uri vaultUri)
         {
-            return new SecretClient(vaultUri, ClientContext.GetTokenCredential());
+            return new SecretClient(vaultUri, new DefaultAzureCredential());
         }
 
         /// <summary>

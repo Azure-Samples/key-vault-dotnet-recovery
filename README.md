@@ -7,7 +7,7 @@ products:
 - azure-storage
 - dotnet-core
 description: "This repo contains sample code demonstrating the backup/restore and recoverable deletion functionality of Azure Key Vault using the Azure .NET SDK."
-urlFragment: key-vault-dotnet-recovery
+urlFragment: net-sdk-samples
 ---
 
 # How to recover and restore Azure Key Vault entities with .NET 
@@ -16,19 +16,19 @@ urlFragment: key-vault-dotnet-recovery
 
 To complete this tutorial:
 
-* Install .NET Core 2.0 version for [Linux] or [Windows]
+* Install .NET Core 3.1 version for [Linux] or [Windows]
 
 If you don't have an Azure subscription, create a [free account] before you begin.
 
 ### Create an App registration using the Azure Portal
 
-*  Go to the [Azure Portal] and log in using your Azure account. 
-*  Search for and select **Azure Active Directory** > **Manage** > **App registrations**. 
-*  Select **New registration**.  
-*  Enter a name for your App registrations, then click **Register**.
-*  Under **Overview** select **Application (client) ID**, **Directory (tenant) ID**, and **Object ID** copy to text editor for later use.
-*  Under **Manage** > **Certificates & secrets** > **New client secret**, filter **Description** and click **Add**.
-*  Copy preview created secret value to text editor for later use.
+1.  Go to the [Azure Portal] and log in using your Azure account. 
+2.  Search for and select **Azure Active Directory** > **Manage** > **App registrations**. 
+3.  Select **New registration**.  
+4.  Enter a name for your App registrations, then click **Register**.
+5.  Under **Overview** select **Application (client) ID**, **Directory (tenant) ID**, and **Object ID** copy to text editor for later use.
+6.  Under **Manage** > **Certificates & secrets** > **New client secret**, filter **Description** and click **Add**.
+7.  Copy preview created secret value to text editor for later use.
 
 ## Run the application
 First, clone the repository on your machine:
@@ -70,7 +70,7 @@ For more information see the [Code of Conduct FAQ] or contact [opencode@microsof
 [free account]: https://azure.microsoft.com/free/?WT.mc_id=A261C142F
 [Azure Portal]: https://portal.azure.com
 [Recovery scenario samples for Azure Key Vault using the Azure Python SDK]: https://azure.microsoft.com/resources/samples/key-vault-recovery-python
-[Azure Key Vault documentation]: https://docs.microsoft.com/en-us/azure/key-vault/general/basic-concepts
+[Azure Key Vault documentation]: https://docs.microsoft.com/azure/key-vault/general/basic-concepts
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq
 [opencode@microsoft.com]: mailto:opencode@microsoft.com
