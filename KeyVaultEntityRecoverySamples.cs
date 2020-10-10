@@ -188,7 +188,7 @@ namespace AzureKeyVaultRecoverySamples
             }
             catch (RequestFailedException ex)
             {
-                Console.WriteLine("Unexpected KeyVault  exception encountered: {0}", ex.Message);
+                Console.WriteLine("Unexpected Key Vault  exception encountered: {0}", ex.Message);
 
                 throw;
             }
