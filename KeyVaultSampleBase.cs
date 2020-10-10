@@ -22,7 +22,7 @@ namespace AzureKeyVaultRecoverySamples
         /// Represents the client context - Azure tenant, subscription, identity etc.
         /// </summary>
         protected ClientContext context;
-        
+
         /// <summary>
         /// KeyVault management (Control Plane) client instance.
         /// </summary>

@@ -48,10 +48,10 @@ dotnet run
 ```
 
 ## This sample shows how to do following operations of Azure Key Vault
-- Back up and restore Key Vault entities
-- Enable soft delete
-- Delete, recover and purge a vault
-- Delete, recover and purge vault entities
+1. Back up and restore Key Vault entities.
+2. Enable soft delete.
+3. Delete, recover and purge a vault.
+4. Delete, recover and purge vault entities.
 
 The following samples are also related:
 
