@@ -1,14 +1,15 @@
-﻿using System;
+﻿using Azure;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Microsoft.Azure.Management.KeyVault.Fluent;
+using Microsoft.Azure.Management.KeyVault.Fluent.Models;
+using Microsoft.Rest;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.KeyVault;
-using Microsoft.Azure.KeyVault.Models;
-using Microsoft.Azure.Management.KeyVault.Fluent;
-using Microsoft.Azure.Management.KeyVault.Fluent.Models;
-using Microsoft.Rest;
 
 namespace AzureKeyVaultRecoverySamples
 {
@@ -30,7 +31,10 @@ namespace AzureKeyVaultRecoverySamples
         /// <summary>
         /// KeyVault data (Data Plane) client instance.
         /// </summary>
-        public KeyVaultClient DataClient { get; private set; }
+        public SecretClient GetDataClient(Uri vaultUri)
+        {
+            return new SecretClient(vaultUri, new DefaultAzureCredential());
+        }
 
         /// <summary>
         /// Builds a sample object from the specified parameters.
@@ -75,10 +79,7 @@ namespace AzureKeyVaultRecoverySamples
 
             // instantiate the management client
             ManagementClient = new KeyVaultManagementClient(serviceCredentials);
-            ManagementClient.SubscriptionId = subscriptionId;
-
-            // instantiate the data client
-            DataClient = new KeyVaultClient(ClientContext.AcquireTokenAsync);
+            ManagementClient.SubscriptionId = subscriptionId;            
         }
 
         #region utilities
@@ -139,23 +140,11 @@ namespace AzureKeyVaultRecoverySamples
             if (vault.Properties.EnableSoftDelete.HasValue
                 && vault.Properties.EnableSoftDelete.Value)
             {
-                //if (!(vault.Properties.EnablePurgeProtection ^ enablePurgeProtection))
-                //{
                 Console.WriteLine("The required recovery protection level is already enabled on vault {0}.", vaultName);
-
                 return;
-                //}
-
-                // check if this is an attempt to lower the recovery level.
-                //if (vault.Properties.EnablePurgeProtection
-                //    && !enablePurgeProtection)
-                //{
-                //    throw new InvalidOperationException("The recovery level on an existing vault cannot be lowered.");
-                //}
             }
 
             vault.Properties.EnableSoftDelete = true;
-            //vault.Properties.EnablePurgeProtection = enablePurgeProtection;
 
             // prepare the update operation on the vault
             var updateParameters = new VaultCreateOrUpdateParametersInner
@@ -228,9 +217,9 @@ namespace AzureKeyVaultRecoverySamples
 
                     break;
                 }
-                catch (KeyVaultErrorException kvee)
+                catch (RequestFailedException kvee)
                 {
-                    var statusCode = kvee.Response.StatusCode;
+                    HttpStatusCode statusCode = (HttpStatusCode)kvee.Status;
 
                     Console.Write("attempt #{0} to {1} returned: {2};", idx, functionName, statusCode);
                     if (continueOn.Contains(statusCode))

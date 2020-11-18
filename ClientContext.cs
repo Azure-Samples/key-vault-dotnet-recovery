@@ -1,10 +1,8 @@
-﻿using System;
-using System.Configuration;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
+﻿using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
+using System;
+using System.Threading.Tasks;
 
 namespace AzureKeyVaultRecoverySamples
 {
@@ -60,7 +58,7 @@ namespace AzureKeyVaultRecoverySamples
         /// </summary>
         /// <param name="certificateThumbprint"></param>
         /// <returns></returns>
-        public static Task<ServiceClientCredentials> GetServiceCredentialsAsync( string tenantId, string applicationId, string appSecret )
+        public static Task<ServiceClientCredentials> GetServiceCredentialsAsync(string tenantId, string applicationId, string appSecret)
         {
             if (_servicePrincipalCredential == null)
             {
@@ -69,41 +67,11 @@ namespace AzureKeyVaultRecoverySamples
 
             return ApplicationTokenProvider.LoginSilentAsync(
                 tenantId,
-                _servicePrincipalCredential, 
+                _servicePrincipalCredential,
                 ActiveDirectoryServiceSettings.Azure,
                 TokenCache.DefaultShared);
         }
 
-        /// <summary>
-        /// Generic ADAL Authentication callback
-        /// </summary>
-        public static async Task<string> AcquireTokenAsync(string authority, string resource, string scope)
-        {
-            if (_servicePrincipalCredential == null)
-            {
-                // read directly from config
-                var appId = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.ApplicationId];
-                var spSecret = ConfigurationManager.AppSettings[SampleConstants.ConfigKeys.SPSecret];
-
-                _servicePrincipalCredential = new ClientCredential(appId, spSecret);
-            }
-
-            AuthenticationContext ctx = new AuthenticationContext(authority, false, TokenCache.DefaultShared);
-            AuthenticationResult result = await ctx.AcquireTokenAsync(resource, _servicePrincipalCredential).ConfigureAwait(false);
-
-            return result.AccessToken;
-        }
-
-        /// <summary>
-        /// Generic authentication callback for a specific tenant
-        /// </summary>
-        /// <param name="tenantId">Identifier of tenant where authentication takes place.</param>
-        /// <returns>Authentication callback.</returns>
-        /// <remarks>Consider moving this class out from Controllers.Core into a separate top-level lib.</remarks>
-        public static Func<Task<string>> GetAuthenticationCallback(string authority, string resource, string scope)
-        {
-            return () => { return AcquireTokenAsync(authority, resource, scope); };
-        }
         #endregion
     }
 }
