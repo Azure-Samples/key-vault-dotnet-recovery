@@ -5,7 +5,7 @@ languages:
 products:
 - azure
 - azure-storage
-- dotnet-core
+- dotnet
 description: "This repo contains sample code demonstrating the backup/restore and recoverable deletion functionality of Azure Key Vault using the Azure .NET SDK."
 urlFragment: net-sdk-samples
 ---
